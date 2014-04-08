@@ -46,9 +46,11 @@ The constructor parameter is a function that will be called by postMessage with 
 
 ### Cleanup
 To totally cleanup all proxies, proxy function promises and disconnect from its messagePort call close:
+
 	proxyPort.close();
 
 To cleanup a group of proxies and associated proxy function promises, call closeProxyGroup with a proxy from the group. For instance the following cleans up a, and b, but not c:
+
 	var a,
 		b,
 		c;
@@ -71,6 +73,7 @@ To make specific use cases even simpler, use the following helpers.
 
 ### ProxyWorker
 To create a web worker controlled via ProxyPort use createProxyWorkerAsync:
+
 	var scriptUris = ["q.js", "example.js"],
 		proxyWorkerOptions = { get: "$.example" };
 	ProxyPort.createProxyWorkerAsync(scriptUris, proxyWorkerOptions).then(function(result) {
@@ -79,10 +82,10 @@ To create a web worker controlled via ProxyPort use createProxyWorkerAsync:
 	});
 
 Call createProxyWorkerAsync with an array of script URIs to load in the worker and an optional proxyWorkerOptions object. Options:
- - options.get - A string containing a JSON reference identifying the object in the worker to return. Defaults to not obtaining an object.
- - options.proxyPortUri - URI referring to the proxyPort.js script. Defaults to "proxyPort.js" e.g. a relative URI pointing to the current location's folder.
- - options.debugConsoleLog - A logging function to connect for debugging purposes. For instance console.log.bind(console).
- - options.proxyPortOptions - A ProxyPort options object to be used with the creation of internal ProxyPort objects.
+ - proxyWorkerOptions.get - A string containing a JSON reference identifying the object in the worker to return. Defaults to not obtaining an object.
+ - proxyWorkerOptions.proxyPortUri - URI referring to the proxyPort.js script. Defaults to "proxyPort.js" e.g. a relative URI pointing to the current location's folder.
+ - proxyWorkerOptions.debugConsoleLog - A logging function to connect for debugging purposes. For instance console.log.bind(console).
+ - proxyWorkerOptions.proxyPortOptions - A ProxyPort options object to be used with the creation of internal ProxyPort objects.
 
 The method returns a promise containing an object with two properties:
  - result.root - The proxy identified by proxyWorkerOptions.get (if any).
