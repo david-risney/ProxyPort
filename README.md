@@ -84,7 +84,7 @@ To create a web worker controlled via ProxyPort use createProxyWorkerAsync:
 Call createProxyWorkerAsync with an array of script URIs to load in the worker and an optional proxyWorkerOptions object. Options:
  - proxyWorkerOptions.get - A string containing a JSON reference identifying the object in the worker to return. Defaults to not obtaining an object.
  - proxyWorkerOptions.proxyPortUri - URI referring to the proxyPort.js script. Defaults to "proxyPort.js" e.g. a relative URI pointing to the current location's folder.
- - proxyWorkerOptions.debugConsoleLog - A logging function to connect for debugging purposes. For instance console.log.bind(console).
+ - proxyWorkerOptions.debugConsoleLog - A logging function to connect for debugging purposes. For instance console.log.bind(console). Defaults to undefined and no logging.
  - proxyWorkerOptions.proxyPortOptions - A ProxyPort options object to be used with the creation of internal ProxyPort objects.
 
 The method returns a promise containing an object with two properties:
@@ -92,6 +92,34 @@ The method returns a promise containing an object with two properties:
  - result.client - The ProxyClient object corresponding to the ProxyWorker. Contains methods getObjectAsync(jsonReference) and importScriptsAsync(scriptUris).
 
 ### ProxySandbox
+To create a sandboxed DOM controlled via ProxyPort use createProxySandboxAsync:
+
+	var scriptUris = ["q.js", "example.js"],
+		proxySandboxOptions = { get: "$.example" };
+	ProxyPort.createProxySandboxAsync(scriptUris, proxySandboxOptions).then(function(result) {
+		result.root.performOperation().then(...);
+		result.client.closeProxyGroup(result.root);
+	});
+
+Call createProxySandboxAsync with an array of script URIs to load in the sandbox and an optional proxySandboxOptions object. Options:
+ - proxySandboxOptions.get - A string containing a JSON reference identifying the object in the worker to return. Defaults to not obtaining an object.
+ - proxySandboxOptions.proxyPortSandboxUri - URI referring to the proxyPortSandbox.html resource. Defaults to "proxyPortSandbox.html" e.g. a relative URI pointing to the current location's folder.
+ - proxySandboxOptions.proxyPortSandboxOrigin - Origin to use when communicating with a sandbox over origin style MessagePort. Defaults to same origin as caller.
+ - proxySandboxOptions.debugConsoleLog - A logging function to connect for debugging purposes. For instance console.log.bind(console). Defaults to undefined and no logging.
+ - proxySandboxOptions.proxyPortOptions - A ProxyPort options object to be used with the creation of internal ProxyPort objects.
+ - proxySandboxOptions.forceIframe - Force the sandboxing mechanism to be iframe rather than webview.
+
+The method returns a promise containing an object with two properties:
+ - result.root - The proxy identified by proxySandboxOptions.get (if any).
+ - result.client - The ProxyClient object corresponding to the ProxySandbox. Contains methods getObjectAsync(jsonReference) and importScriptsAsync(scriptUris).
 
 ### Safe JSONP
+Many web app platforms have strict CSP requirements that block normal JSONP mechanisms. You can use	ProxyPort.getJsonpAsync in combination with createProxySandboxAsync to safely obtain JSON data from a JSONP script.
+
+	var scriptUris = ["q.js", "example.js"];
+	ProxyPort.createProxySandboxAsync(scriptUris).then(function(result) {
+		return ProxyPort.getJsonpAsync(result.client, "http://example.com/example?a=jsonp&c=callback", { callbackName: "callback" });
+	}).then(function(jsonData) {
+		...
+	});
 
