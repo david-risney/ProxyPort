@@ -1,24 +1,39 @@
 ﻿<!DOCTYPE html>
-<html class="borderless fill">
+<html>
 <head>
     <meta charset="utf-8" />
-    <title>ProxyPort</title>
-    <style>
-        .borderless {
-            border: 0;
-            margin: 0;
-            padding: 0;
-        }
-        .fill {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
+    <title>ProxyPort Q test</title>
+    <link rel="stylesheet" href="../common/qunit.css">
+</head>
+<body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+    <script src="../common/es5-shim.js"></script>
+    <script src="../common/es6-shim.js"></script>
+    <script src="../common/qunit.js"></script>
     <script src="../../q.js"></script>
     <script src="../../proxyPort.js"></script>
-    <script src="../common/simpleAsyncTester.js"></script>
+    <script>
+    function getPromiseUri() {
+        return "q.js";
+    }
+
+    function delayAsync(timeout) {
+        var deferral = Q.defer();
+        setTimeout(function () {
+            deferral.resolve();
+        }, timeout);
+        return deferral.promise;
+    }
+
+    function wrapPromiseError(value) {
+        return Q.reject(value);
+    }
+
+    function wrapPromiseValue(value) {
+        return Q(value);
+    }
+    </script>
     <script src="../common/proxyPort.test.js"></script>
-</head>
-<body class="borderless fill">
 </body>
 </html>

@@ -1,59 +1,5 @@
-(function (root) {
+(function () {
     "use strict";
-
-    var Q,
-        SAT,
-        runConsoleTests = false;
-
-    if (typeof document !== "undefined") {
-        Q = root.Q;
-        SAT = root.SAT;
-        document.addEventListener("DOMContentLoaded", function () {
-            new SAT.ConsoleView(console);
-            new SAT.HtmlView(document.getElementsByTagName("body")[0]);
-        });
-    }
-    else if (typeof require !== "undefined") {
-        SAT = require("../../simpleAsyncTester");
-        Q = require("../../q");
-        runConsoleTests = true;
-    }
-
-    var Promise = {
-        delay: undefined,
-        wrap: undefined,
-        wrapError: undefined,
-        defer: undefined
-    };
-
-    if (typeof WinJS !== "undefined") {
-        Promise.delay = WinJS.Promise.timeout;
-        Promise.wrap = WinJS.Promise.wrap;
-        Promise.wrapError = WinJS.Promise.wrapError;
-        Promise.defer = function () {
-            var resolve,
-                reject,
-                notify,
-                promise = new root.WinJS.Promise(function (resolveIn, rejectIn, notifyIn) {
-                    resolve = resolveIn;
-                    reject = rejectIn;
-                    notify = notifyIn;
-                });
-
-            return {
-                promise: promise,
-                resolve: resolve,
-                reject: reject,
-                notify: notify
-            };
-        }
-    }
-    else {
-        Promise.defer = Q.defer;
-        Promise.delay = Q.delay;
-        Promise.wrap = Q;
-        Promise.wrapError = Q.reject;
-    }
 
     function createProxyPortsOnChannel(console, options) {
         var channel = new MessageChannel();
@@ -65,7 +11,7 @@
         };
     }
 
-    SAT.addTest("ProxyPort post simple number", function (console) {
+    asyncTest("ProxyPort post simple number", 2, function () {
         var channel = createProxyPortsOnChannel(console),
             result;
 
@@ -74,12 +20,14 @@
         });
         channel.port1.postObject(1);
 
-        return Promise.delay(100).then(function () {
-            console.assert(result === 1 && typeof result === "number");
+        delayAsync(100).then(function () {
+            equal(result, 1);
+            equal(typeof result, "number");
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post two strings", function (console) {
+    asyncTest("ProxyPort post two strings", 2, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [];
 
@@ -89,13 +37,14 @@
         channel.port1.postObject("first");
         channel.port1.postObject("second");
 
-        return Promise.delay(100).then(function () {
-            console.assert(results[0] === "first");
-            console.assert(results[1] === "second");
+        delayAsync(100).then(function () {
+            equal(results[0], "first");
+            equal(results[1], "second");
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post array of arrays of numbers", function (console) {
+    asyncTest("ProxyPort post array of arrays of numbers", 1, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             value = [[1, 2, 3], [4], [[5], 6]];
@@ -105,14 +54,15 @@
         });
         channel.port1.postObject(value);
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             console.log("received: " + JSON.stringify(results[0]));
             console.log("expected: " + JSON.stringify(value));
-            console.assert(JSON.stringify(results[0]) === JSON.stringify(value));
+            equal(JSON.stringify(results[0]), JSON.stringify(value));
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post object of null like values", function (console) {
+    asyncTest("ProxyPort post object of null like values", 3, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             value = {n: null, u: undefined, z: 0, f: false};
@@ -122,41 +72,37 @@
         });
         channel.port1.postObject(value);
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             console.log("received: " + JSON.stringify(results[0]));
             console.log("expected: " + JSON.stringify(value));
-            console.assert(JSON.stringify(results[0]) === JSON.stringify(value));
-            console.assert(results[0].hasOwnProperty("u") && results[0].u === undefined);
+            equal(JSON.stringify(results[0]), JSON.stringify(value));
+            equal(results[0].hasOwnProperty("u"), true);
+            equal(results[0].u, undefined);
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post undefined", function (console) {
-        var channel = createProxyPortsOnChannel(console),
-            deferral = Promise.defer();
+    asyncTest("ProxyPort post undefined", 1, function () {
+        var channel = createProxyPortsOnChannel(console);
 
         channel.port2.addEventListener("object", function (object) {
-            console.assert(object === undefined);
-            deferral.resolve();
+            equal(object, undefined);
+            start();
         });
         channel.port1.postObject(undefined);
-
-        return deferral.promise;
     });
 
-    SAT.addTest("ProxyPort post null", function (console) {
-        var channel = createProxyPortsOnChannel(console),
-            deferral = Promise.defer();
+    asyncTest("ProxyPort post null", 1, function () {
+        var channel = createProxyPortsOnChannel(console);
 
         channel.port2.addEventListener("object", function (object) {
-            console.assert(object === null);
-            deferral.resolve();
+            equal(object, null);
+            start();
         });
         channel.port1.postObject(null);
-
-        return deferral.promise;
     });
 
-    SAT.addTest("ProxyPort post array like object containing array", function (console) {
+    asyncTest("ProxyPort post array like object containing array", 1, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             value = { 0: "a", 1: ["b", "c"], length: 2 };
@@ -166,14 +112,15 @@
         });
         channel.port1.postObject(value);
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             console.log("received: " + JSON.stringify(results[0]));
             console.log("expected: " + JSON.stringify(value));
-            console.assert(JSON.stringify(results[0]) === JSON.stringify(value));
+            equal(JSON.stringify(results[0]), JSON.stringify(value));
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post sequence of various objects", function (console) {
+    asyncTest("ProxyPort post sequence of various objects", 1, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             values = [1, ["a", { b: "b" }, 3], { a: "b" }, "abc", null];
@@ -183,14 +130,15 @@
         });
         values.forEach(channel.port1.postObject.bind(channel.port1));
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             console.log("received: " + JSON.stringify(results));
             console.log("expected: " + JSON.stringify(values));
-            console.assert(JSON.stringify(results) === JSON.stringify(values));
+            equal(JSON.stringify(results), JSON.stringify(values));
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post object with cycles", function (console) {
+    asyncTest("ProxyPort post object with cycles", 4, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             values = [],
@@ -204,29 +152,29 @@
         });
         values.forEach(channel.port1.postObject.bind(channel.port1));
 
-        return Promise.delay(100).then(function () {
-            console.assert(results[0].hasOwnProperty("a") && results[0].a === results[0]);
-            console.assert(values[0].hasOwnProperty("a") && values[0].a === values[0]);
+        delayAsync(100).then(function () {
+            equal(results[0].hasOwnProperty("a"), true);
+            equal(results[0].a, results[0]);
+            equal(values[0].hasOwnProperty("a"), true);
+            equal(values[0].a, values[0]);
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post function", function (console) {
+    asyncTest("ProxyPort post function", 1, function () {
         var channel = createProxyPortsOnChannel(console),
-            called = false,
-            deferral = Promise.defer();
+            called = false;
 
         channel.port2.addEventListener("object", function (fn) {
             fn().then(function () {
-                console.assert(called);
-                deferral.resolve();
+                equal(called, true);
+                start();
             });
         });
         channel.port1.postObject(function () { called = true; });
-
-        return deferral.promise;
     });
 
-    SAT.addTest("ProxyPort post object with simple function", function (console) {
+    asyncTest("ProxyPort post object with simple function", 3, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             values = [],
@@ -240,18 +188,19 @@
         });
         values.forEach(channel.port1.postObject.bind(channel.port1));
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             return results[0].a();
         }).then(function (result) {
-            console.assert(result === 1);
+            equal(result, 1);
             return results[0].a();
         }).then(function (result) {
-            console.assert(result === 2);
-            console.assert(result === count);
+            equal(result, 2);
+            equal(result, count);
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post object with simple throwing function", function (console) {
+    asyncTest("ProxyPort post object with simple throwing function", 1, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             values = [],
@@ -266,23 +215,28 @@
         });
         values.forEach(channel.port1.postObject.bind(channel.port1));
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             return results[0].a();
         }).then(function (result) {
             success = true;
         }, function (fail) {
             success = false;
         }).then(function () {
-            console.assert(!success);
+            equal(!success, true);
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post object with promise failing function", function (console) {
+    asyncTest("ProxyPort post object with promise failing function", 2, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             values = [],
             count = 0,
-            obj = { a: function () { return Promise.wrapError(456); } },
+            obj = {
+                a: function () {
+                    return wrapPromiseError(456);
+                }
+            },
             success = true;
 
         values.push(obj);
@@ -292,24 +246,29 @@
         });
         values.forEach(channel.port1.postObject.bind(channel.port1));
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             return results[0].a();
         }).then(function (result) {
             success = true;
         }, function (fail) {
-            console.assert(fail === 456);
+            equal(fail, 456);
             success = false;
         }).then(function () {
-            console.assert(!success);
+            equal(!success, true);
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post object with promise function", function (console) {
+    asyncTest("ProxyPort post object with promise function", 1, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             values = [],
             count = 0,
-            obj = { a: function () { return Promise.wrap(123); } };
+            obj = {
+                a: function () {
+                    return wrapPromiseValue(123);
+                }
+            };
 
         values.push(obj);
 
@@ -318,14 +277,15 @@
         });
         values.forEach(channel.port1.postObject.bind(channel.port1));
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             return results[0].a();
         }).then(function (result) {
-            console.assert(result === 123);
+            equal(result, 123);
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post object called through object function", function (console) {
+    asyncTest("ProxyPort post object called through object function", 1, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             values = [],
@@ -340,14 +300,15 @@
         });
         values.forEach(channel.port1.postObject.bind(channel.port1));
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             return results[0].b(objA);
         }).then(function (result) {
-            console.assert(result === 1);
+            equal(result, 1);
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort post proxy unproxying", function (console) {
+    asyncTest("ProxyPort post proxy unproxying", 2, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             values = [],
@@ -362,16 +323,17 @@
         });
         values.forEach(channel.port1.postObject.bind(channel.port1));
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             return results[0].a(objB);
         }).then(function (result) {
-            console.assert(objB.abc === 123);
+            equal(objB.abc, 123);
             console.log("objB looks correct, but is it exactly the same object?");
-            console.assert(objB === result);
+            equal(objB, result);
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort limit object depth", function (console) {
+    asyncTest("ProxyPort limit object depth", 1, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             obj = { a: { b: { c: { d: { e: 7 } } } } };
@@ -381,12 +343,13 @@
         });
         channel.port1.postObject(obj, { maximumDepth: 3 });
 
-        return Promise.delay(100).then(function () {
-            console.assert(JSON.stringify(results[0]) === JSON.stringify({ a: { b: {} } }));
+        delayAsync(100).then(function () {
+            equal(JSON.stringify(results[0]), JSON.stringify({ a: { b: {} } }));
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort inherit object depth", function (console) {
+    asyncTest("ProxyPort inherit object depth", 2, function () {
         var channel = createProxyPortsOnChannel(console),
             results = [],
             objA = { a: { b: { c: { d: { e: 7 } } } }, r: function () { return objB; } },
@@ -397,31 +360,31 @@
         });
         channel.port1.postObject(objA, { maximumDepth: 3 });
 
-        return Promise.delay(100).then(function () {
+        delayAsync(100).then(function () {
             console.log(JSON.stringify(results[0]));
-            console.assert(JSON.stringify(results[0]) === JSON.stringify({ a: { b: {} } }));
+            equal(JSON.stringify(results[0]), JSON.stringify({ a: { b: {} } }));
             return results[0].r();
         }).then(function (obj) {
             console.log(JSON.stringify(obj));
-            console.assert(JSON.stringify(obj) === JSON.stringify({ f: { g: {} } }));
+            equal(JSON.stringify(obj), JSON.stringify({ f: { g: {} } }));
+            start();
         });
     });
 
-    SAT.addTest("ProxyPort cleanup one proxy", function (console) {
+    asyncTest("ProxyPort cleanup one proxy", 1, function () {
         var channel = createProxyPortsOnChannel(console),
-            deferral = Promise.defer(),
             garbage = { a: "b" };
 
-        channel.port1.addEventListener("objectRemoved", function (key) { deferral.resolve(); });
+        channel.port1.addEventListener("objectRemoved", function (key) {
+            equal(1, 1);
+            start();
+        });
         channel.port2.addEventListener("object", function (object) { channel.port2.closeProxyGroup(object); });
         channel.port1.postObject(garbage);
-
-        return deferral.promise;
     });
 
-    SAT.addTest("ProxyPort cleanup two proxies on both sides", function (console) {
+    asyncTest("ProxyPort cleanup two proxies on both sides", 4, function () {
         var channel = createProxyPortsOnChannel(console),
-            deferral = Promise.defer(),
             removedCount = 0,
             expectedRemoveCount = 3,
             obj = {
@@ -433,9 +396,10 @@
         function onRemove(debugName, key) {
             console.log(debugName + ": " + key);
             ++removedCount;
-            console.assert(removedCount <= expectedRemoveCount);
+            equal(removedCount <= expectedRemoveCount, true);
             if (removedCount === expectedRemoveCount) {
-                deferral.resolve();
+                equal(removedCount, expectedRemoveCount);
+                start();
             }
         }
 
@@ -453,83 +417,80 @@
         // postObject obj           -> | -> objProxy81
         // obj.run(workItemProxy84) <- | <- objProxy81.run(workItem)
         // workItemProxy84(obj)     -> | -> workItem(objProxy87)
-
-        return deferral.promise;
     });
 
-    SAT.addTest("ProxyWorker create, use, and close", function (console) {
-        return ProxyPort.createProxyWorkerAsync(["q.js"], { get: "$", proxyPortUri: "../../proxyPort.js", debugConsoleLog: console.log.bind(console) }).then(function (result) {
+    asyncTest("ProxyWorker create, use, and close", 1, function () {
+        ProxyPort.createProxyWorkerAsync([getPromiseUri(), "test/common/es5-shim.js", "test/common/es6-shim.js"], { get: "$", proxyPortUri: "../../proxyPort.js", debugConsoleLog: console.log.bind(console) }).then(function (result) {
             console.log(result.root.location.href);
-            console.assert(result.root.location.pathname.indexOf("proxyPort.js") !== -1);
+            equal(result.root.location.pathname.indexOf("proxyPort.js") !== -1, true);
             result.client.close();
+            start();
         });
     });
 
-    SAT.addTest("ProxySandbox create, use, and close", function (console) {
-        return ProxyPort.createProxySandboxAsync(["q.js"], { get: "$.document.location", proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
+    asyncTest("ProxySandbox create, use, and close", 1, function () {
+        ProxyPort.createProxySandboxAsync([getPromiseUri(), "test/common/es5-shim.js", "test/common/es6-shim.js"], { get: "$.document.location", proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
             console.log(result.root.href);
-            console.assert(result.root.pathname.indexOf("proxyPortSandbox.html") !== -1);
+            equal(result.root.pathname.indexOf("proxyPortSandbox.html") !== -1, true);
             result.client.close();
+            start();
         });
     });
 
-    SAT.addTest("ProxySandbox JSONP callback success", function (console) {
+    asyncTest("ProxySandbox JSONP callback success", 1, function () {
         var client;
-        return ProxyPort.createProxySandboxAsync(["q.js"], { proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
+        ProxyPort.createProxySandboxAsync([getPromiseUri(), "test/common/es5-shim.js", "test/common/es6-shim.js"], { proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
             client = result.client;
-            return ProxyPort.getJsonpAsync(result.client, "test/browser-q/jsonp-example-callback.jsonp", { callbackName: "foo" });
+            return ProxyPort.getJsonpAsync(result.client, "test/common/jsonp-example-callback.jsonp", { callbackName: "foo" });
         }).then(function (jsonpObj) {
-            console.assert(jsonpObj.length);
+            equal(jsonpObj.length > 0, true);
             client.close();
+            start();
         });
     });
 
-    SAT.addTest("ProxySandbox JSONP global success", function (console) {
+    asyncTest("ProxySandbox JSONP global success", 1, function () {
         var client;
-        return ProxyPort.createProxySandboxAsync(["q.js"], { proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
+        ProxyPort.createProxySandboxAsync([getPromiseUri(), "test/common/es5-shim.js", "test/common/es6-shim.js"], { proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
             client = result.client;
-            return ProxyPort.getJsonpAsync(result.client, "test/browser-q/jsonp-example-global.jsonp", { globalName: "foo" });
+            return ProxyPort.getJsonpAsync(result.client, "test/common/jsonp-example-global.jsonp", { globalName: "foo" });
         }).then(function (jsonpObj) {
-            console.assert(jsonpObj.length);
+            equal(jsonpObj.length > 0, true);
             client.close();
+            start();
         });
     });
 
-    SAT.addTest("ProxySandbox JSONP throw failure", function (console) {
+    asyncTest("ProxySandbox JSONP throw failure", 1, function () {
         var client;
-        return ProxyPort.createProxySandboxAsync(["q.js"], { proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
+        ProxyPort.createProxySandboxAsync([getPromiseUri(), "test/common/es5-shim.js", "test/common/es6-shim.js"], { proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
             client = result.client;
-            return ProxyPort.getJsonpAsync(result.client, "test/browser-q/jsonp-example-throw.jsonp", { globalName: "foo" });
+            return ProxyPort.getJsonpAsync(result.client, "test/common/jsonp-example-throw.jsonp", { globalName: "foo" });
         }).then(function (jsonpObj) {
-            console.assert(false);
+            equal(false, true);
+            start();
         }, function (error) {
+            equal(true, true);
             console.log("Jsonp expected failure: " + error);
             client.close();
+            start();
         });
     });
 
-    SAT.addTest("ProxySandbox JSONP callback fails to callback", function (console) {
+    asyncTest("ProxySandbox JSONP callback fails to callback", 1, function () {
         var client;
-        return ProxyPort.createProxySandboxAsync(["q.js"], { proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
+        ProxyPort.createProxySandboxAsync([getPromiseUri(), "test/common/es5-shim.js", "test/common/es6-shim.js"], { proxyPortSandboxUri: "../../proxyPortSandbox.html", debugConsoleLog: console.log.bind(console) }).then(function (result) {
             client = result.client;
-            return ProxyPort.getJsonpAsync(result.client, "test/browser-q/jsonp-example-global.jsonp", { callbackName: "foo" });
+            return ProxyPort.getJsonpAsync(result.client, "test/common/jsonp-example-global.jsonp", { callbackName: "foo" });
         }).then(function (jsonpObj) {
-            console.assert(false);
+            equal(false, true);
             client.close();
         }, function (error) {
+            equal(true, true);
             console.log("Jsonp expected failure: " + error);
             client.close();
+            start();
             return "success";
         });
     });
-
-    if (runConsoleTests) {
-        new SAT.ConsoleView(console, SAT);
-        SAT.runAsync().then(function () {
-            console.log("done");
-        },
-        function (error) {
-            console.log("Error in test tester: " + error);
-        });
-    }
-})(this);
+}());

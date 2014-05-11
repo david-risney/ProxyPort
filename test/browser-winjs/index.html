@@ -1,25 +1,35 @@
 ﻿<!DOCTYPE html>
-<html class="borderless fill">
+<html>
 <head>
     <meta charset="utf-8" />
-    <title>ProxyPort</title>
-    <style>
-        .borderless {
-            border: 0;
-            margin: 0;
-            padding: 0;
-        }
-        .fill {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
+    <title>ProxyPort WinJS tests</title>
+    <link rel="stylesheet" href="../common/qunit.css">
+</head>
+<body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture"></div>
+    <script src="../common/es5-shim.js"></script>
+    <script src="../common/es6-shim.js"></script>
+    <script src="../common/qunit.js"></script>
     <script src="base.js"></script>
     <script src="../../proxyPort.js"></script>
-    <script src="../common/simpleAsyncTester.js"></script>
+    <script>
+        function getPromiseUri() {
+            return "test/browser-winjs/base.js";
+        }
+
+        function delayAsync(timeout) {
+            return WinJS.Promise.timeout(timeout);
+        }
+
+        function wrapPromiseError(value) {
+            return WinJS.Promise.wrapError(value);
+        }
+
+        function wrapPromiseValue(value) {
+            return WinJS.Promise.wrap(value);
+        }
+    </script>
     <script src="../common/proxyPort.test.js"></script>
-    <script src="proxyPort.test.js"></script>
-</head>
-<body class="borderless fill">
 </body>
 </html>
