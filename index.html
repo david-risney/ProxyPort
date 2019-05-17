@@ -3,64 +3,25 @@
     <script>
         const test = { c: 10, inc: () => { return ++test.c; } };
 
-        function example1() {
-            const g1 = new ProxyGroup();
-            const g2 = new ProxyGroup();
+        async function example1() {
+            const g1 = new ProxyGroup({ gid: "l" });
+            const g2 = new ProxyGroup({ gid: "r", console: console });
             g1.setLocalMessageOutCallback(message => g2.remoteMessageIn(message));
             g2.setLocalMessageOutCallback(message => g1.remoteMessageIn(message));
 
+            g1.localRoots.a = 24;
             g1.localRoots.o = test;
 
-            return g2.remoteRoots.get("o").then(o => {
-                return o.get("inc");
-            }).then(inc => {
-                return inc.call();
-            }).then(r => {
-                console.log(r);
-            });
+            console.log(await g2.remoteRoots.a);
+            console.log(await g2.remoteRoots.o.c);
+            console.log(await g2.remoteRoots.o.inc());
+            console.log(await g2.remoteRoots.o.c);
         }
-
-        async function example2() {
-            const g1 = new ProxyGroup();
-            const g2 = new ProxyGroup();
-            g1.setLocalMessageOutCallback(message => g2.remoteMessageIn(message));
-            g2.setLocalMessageOutCallback(message => g1.remoteMessageIn(message));
-
-            g1.localRoots.o = test;
-
-            const o = await g2.remoteRoots.get("o");
-            const inc = await o.get("inc");
-            const r = await inc.call();
-            console.log(r);
-        }
-
-        async function example3() {
-            const g1 = new ProxyGroup();
-            const g2 = new ProxyGroup();
-            g1.setLocalMessageOutCallback(message => g2.remoteMessageIn(message));
-            g2.setLocalMessageOutCallback(message => g1.remoteMessageIn(message));
-
-            g1.localRoots.o = test;
-
-            console.log(await (await (await g2.remoteRoots.get("o")).get("inc")).call());
-        }
-
-        async function example4() {
-            const g1 = new ProxyGroup();
-            const g2 = new ProxyGroup();
-            g1.setLocalMessageOutCallback(message => g2.remoteMessageIn(message));
-            g2.setLocalMessageOutCallback(message => g1.remoteMessageIn(message));
-
-            g1.localRoots.o = test;
-
-            console.log(await (await (await g2.remoteRoots.o).inc)());
-        }
-
-        example1();
-        example2();
-        example3();
-        example4();
     </script>
     <body>
+        <button id="example1">example1</button>
+        <script>
+            document.getElementById("example1").addEventListener("click", example1);
+        </script>
     </body>
 </html>
